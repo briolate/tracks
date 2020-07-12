@@ -1,29 +1,44 @@
-import React, { useState, useEffect } from "react";
+//import "../_mockLocation";
+import React, { useState, useContext, useCallback } from "react";
 import { StyleSheet, SafeAreaView } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Text } from "react-native-elements";
-import { requestPermissionsAsync } from "expo-location";
 import Map from "../components/Map";
+import { Context as LocationContext } from "../context/LocationContext";
+import useLocation from "../hooks/useLocation";
+import TrackForm from "../components/TrackForm";
 
 const TrackCreateScreen = () => {
-  const [err, setErr] = useState(null);
+  const [isFocused, setIsFocused] = useState(true);
+  const {
+    state: { recording },
+    addLocation,
+  } = useContext(LocationContext);
 
-  const startWatching = async () => {
-    try {
-      await requestPermissionsAsync();
-    } catch (e) {
-      setErr(e);
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => {
+        setIsFocused(false);
+      };
+    }, [isFocused])
+  );
 
-  useEffect(() => {
-    startWatching();
-  }, []);
+  const callback = useCallback(
+    (location) => {
+      addLocation(location, recording);
+    },
+    [recording]
+  );
+
+  const [err] = useLocation(isFocused || recording, callback);
 
   return (
     <SafeAreaView forceInset={{ top: "always" }}>
       <Text h2>Create a Track</Text>
       <Map />
       {err ? <Text>Please enable location services</Text> : null}
+      <TrackForm />
     </SafeAreaView>
   );
 };
